@@ -82,10 +82,17 @@ class PlacesSearchDelegate extends SearchDelegate<String> {
 
   // --- Building the Results & Suggestions ---
 
+  // --- UPDATED --- This is called when the user submits their search query
   @override
   Widget buildResults(BuildContext context) {
-    // We can use the same logic as suggestions since we want a live list
-    return buildSuggestions(context);
+    if (query.isNotEmpty) {
+      // --- FIXED --- Delay the close call to prevent the build error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        close(context, "query:$query");
+      });
+    }
+    // Show a loading indicator while the callback is being scheduled
+    return const Center(child: CircularProgressIndicator());
   }
 
   @override
@@ -93,6 +100,11 @@ class PlacesSearchDelegate extends SearchDelegate<String> {
     return FutureBuilder(
       future: _fetchSuggestions(query),
       builder: (context, snapshot) {
+        if (query.isEmpty) {
+          return const Center(
+            child: Text('Start typing to search for a place.'),
+          );
+        }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
