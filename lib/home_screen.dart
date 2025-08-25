@@ -91,19 +91,19 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildPopularAttractions() {
     return SizedBox(
-      height: 220,
+      height: 200,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           _buildAttractionCard(
-            'https://placehold.co/300x400/D1C4E9/311B92?text=Eiffel+Tower',
+            'https://picsum.photos/200',
             'Explore',
             'Eiffel Tower',
             'September 15, 2023',
           ),
           const SizedBox(width: 16),
           _buildAttractionCard(
-            'https://placehold.co/300x400/C5CAE9/303F9F?text=Louvre',
+            'https://picsum.photos/160',
             'Museum',
             'Louvre',
             'October 1, 2023',
@@ -216,19 +216,19 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildRecommendations() {
     return SizedBox(
-      height: 220,
+      height: 200,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           _buildAttractionCard(
-            'https://placehold.co/300x400/B2DFDB/00796B?text=Getaway',
+            'https://picsum.photos/160',
             'Getaway',
             'Weekend Trip',
             '',
           ),
           const SizedBox(width: 16),
           _buildAttractionCard(
-            'https://placehold.co/300x400/DCEDC8/689F38?text=Restaurant',
+            'https://picsum.photos/160',
             'Restaurant',
             'Local Cuisine',
             '',
