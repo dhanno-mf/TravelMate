@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'Trips.dart';
-import 'settings.dart';
-import 'Favourites.dart';
 import 'explore_screen.dart';
 
 void main() {
@@ -184,7 +182,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Icon(
           icon,
           color: isSelected ? Colors.white : Colors.grey.shade400,
-          size: 20,
+          size: 24,
         ),
       ),
     );

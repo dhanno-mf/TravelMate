@@ -72,7 +72,7 @@ class TravelScreen extends StatefulWidget {
 class _TravelScreenState extends State<TravelScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _selectedIndex =
+  final int _selectedIndex =
       1; // Set initial selected index for bottom nav to Explore
 
   @override
