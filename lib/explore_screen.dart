@@ -37,7 +37,9 @@ class ExploreScreen extends StatefulWidget {
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+// --- UPDATED --- Added AutomaticKeepAliveClientMixin to preserve state
+class _ExploreScreenState extends State<ExploreScreen>
+    with AutomaticKeepAliveClientMixin {
   // Controller for the map
   GoogleMapController? _mapController;
 
@@ -56,6 +58,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   // Set of markers to display on the map
   final Set<Marker> _markers = {};
+
+  // --- NEW --- Required for AutomaticKeepAliveClientMixin
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -131,12 +137,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
         locationData.latitude!,
         locationData.longitude!,
       );
-
       final BitmapDescriptor customIcon = await _createCustomMarkerBitmap(
         80,
         Colors.blue.shade600,
       );
 
+      if (!mounted) return;
       setState(() {
         _markers.removeWhere((m) => m.markerId.value == 'currentLocation');
         _markers.add(
@@ -171,6 +177,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (_currentUserLocation == null) return;
 
     final String placeType = _getPlaceTypeForCategory(category);
+    debugPrint("Fetching nearby places of type: $placeType");
     final String url =
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_currentUserLocation!.latitude},${_currentUserLocation!.longitude}&radius=5000&type=$placeType&key=$kGoogleApiKey';
 
@@ -187,11 +194,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
     await _executePlaceSearch(url, 'search');
   }
 
-  // Generic helper to execute search, update markers, and adjust camera
+  // Generic helper to execute search and update markers
   Future<void> _executePlaceSearch(String url, String searchType) async {
     if (kGoogleApiKey == "YOUR_GOOGLE_MAPS_API_KEY") return;
 
     final response = await http.get(Uri.parse(url));
+    if (!mounted) return;
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -228,6 +236,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }
 
       // Update the state with the new markers
+      if (!mounted) return;
       setState(() {
         _markers.removeWhere((m) => m.markerId.value != 'currentLocation');
         _markers.addAll(newMarkers);
@@ -336,13 +345,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  // --- UPDATED --- This function now fetches photo details
+  // This function now fetches photo details
   Future<void> _getPlaceDetails(String placeId) async {
     if (kGoogleApiKey == "YOUR_GOOGLE_MAPS_API_KEY") return;
 
     final String url =
         'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=name,formatted_address,rating,user_ratings_total,photos&key=$kGoogleApiKey';
     final response = await http.get(Uri.parse(url));
+    if (!mounted) return;
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -357,6 +367,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=$photoReference&key=$kGoogleApiKey';
         }
 
+        if (!mounted) return;
         setState(() {
           _selectedPlace = PlaceDetails(
             placeId: placeId,
@@ -390,6 +401,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- NEW --- Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -579,7 +592,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // --- UPDATED --- This card now uses the real image URL or a placeholder
+  // This card now uses the real image URL or a placeholder
   Widget _buildLocationCard(PlaceDetails place) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -669,7 +682,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               'https://picsum.photos/400', // Use real URL or placeholder
                           height: 120,
                           fit: BoxFit.cover,
-                          // --- NEW --- Add an error builder for the image
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               height: 120,

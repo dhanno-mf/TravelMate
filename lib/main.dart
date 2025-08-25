@@ -5,6 +5,8 @@ import 'Trips.dart';
 import 'explore_screen.dart';
 
 void main() {
+  // Ensures that native bindings are initialized before calling SharedPreferences
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -112,8 +114,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // Reverted to three main screens for the nav bar
-  static const List<Widget> _widgetOptions = <Widget>[
+  // --- UPDATED --- List of screens that will be kept in memory
+  final List<Widget> _widgetOptions = const <Widget>[
     HomeScreen(),
     ExploreScreen(),
     ItineraryScreen(),
@@ -130,7 +132,8 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          _widgetOptions.elementAt(_selectedIndex),
+          // --- UPDATED --- Using IndexedStack to preserve the state of each tab
+          IndexedStack(index: _selectedIndex, children: _widgetOptions),
           _buildFloatingNavBar(), // Removed the condition, so it always shows
         ],
       ),
@@ -148,7 +151,7 @@ class _MainScreenState extends State<MainScreen> {
           borderRadius: BorderRadius.circular(50.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
+              color: Colors.black.withOpacity(0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
