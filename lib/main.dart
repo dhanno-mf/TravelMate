@@ -160,7 +160,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             _buildNavItem(Icons.home_outlined, 0),
             const SizedBox(width: 6),
-            _buildNavItem(Icons.map_outlined, 1),
+            _buildNavItem(Icons.location_on_outlined, 1),
             const SizedBox(width: 6),
             _buildNavItem(Icons.card_travel_outlined, 2),
           ],
