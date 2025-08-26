@@ -97,7 +97,10 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_handleTabSelection);
-    _updateLocationAndFetchData();
+    // --- UPDATED --- Fetch data after the first frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateLocationAndFetchData();
+    });
   }
 
   @override
@@ -302,7 +305,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  // --- NEW --- Function to fetch nearby attractions
   Future<void> _fetchNearbyAttractions() async {
     if (_currentLocationData == null) {
       await Future.delayed(const Duration(seconds: 1));
@@ -319,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen>
       final lng = _currentLocationData!.longitude;
 
       final String url =
-          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$lat,$lng&radius=5000&type=tourist_attraction&key=$kGoogleApiKey';
+          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$lat,$lng&radius=5000&type=tourist_attraction&keyword=things%20to%20do%7Cplaces%20to%20visit&key=$kGoogleApiKey';
 
       final response = await http.get(Uri.parse(url));
 
@@ -417,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.build(context);
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const Drawer(child: Center(child: Text("Side Menu"))),
+      drawer: _buildDrawer(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -434,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildDestinationsList(),
+                    _buildTripsList(),
                     _buildStaysList(),
                     _buildAttractionsList(), // New list for Attractions
                   ],
@@ -444,6 +446,108 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      width: 250,
+
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.fromLTRB(26, 50, 16, 20),
+            decoration: BoxDecoration(color: Colors.grey.shade200),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage('https://picsum.photos/200'),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'dhanno',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _buildDrawerItem(icon: Icons.bookmark_border, text: 'Saved Places'),
+          _buildDrawerItem(icon: Icons.card_giftcard, text: 'Refer a Friend'),
+          const Divider(
+            color: Colors.black,
+            endIndent: 12,
+            indent: 12,
+            thickness: 0.80,
+          ),
+          _buildDrawerItem(icon: Icons.settings_outlined, text: 'Settings'),
+          _buildDrawerItem(
+            icon: Icons.report_problem_outlined,
+            text: 'Report a Problem',
+          ),
+          _buildDrawerItem(icon: Icons.help_outline, text: 'Help Center'),
+          const Divider(
+            color: Colors.black,
+            endIndent: 12,
+            indent: 12,
+            thickness: 0.80,
+          ),
+          ListTile(
+            contentPadding: const EdgeInsets.only(left: 30),
+            leading: const Icon(
+              Icons.logout,
+              color: Color.fromARGB(255, 255, 120, 111),
+            ),
+            title: const Text(
+              'Logout',
+              style: TextStyle(
+                color: Color.fromARGB(255, 255, 120, 111),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () {
+              // Handle logout logic
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String text,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsetsDirectional.only(
+        start: 30,
+        top: 0,
+        end: 0,
+        bottom: 0,
+      ),
+      leading: Icon(icon, color: Colors.black),
+      title: Text(text),
+      onTap: onTap ?? () => Navigator.pop(context),
     );
   }
 
@@ -459,24 +563,26 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             const Text(
               'Location',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 1),
             Row(
               children: [
                 const Icon(Icons.location_on, color: Colors.black, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  _currentCity,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 2),
+                GestureDetector(
+                  onTap: () {
+                    // Handle city tap
+                    _updateLocationAndFetchData();
+                  },
+                  child: Text(
+                    _currentCity,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 18, color: Colors.grey),
-                  onPressed: _updateLocationAndFetchData,
                 ),
               ],
             ),
@@ -508,14 +614,18 @@ class _HomeScreenState extends State<HomeScreen>
     return GestureDetector(
       onTap: _handleSearchTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsetsDirectional.only(
+          start: 10,
+          end: 4,
+          top: 4,
+          bottom: 4,
+        ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.black,
           borderRadius: BorderRadius.circular(30.0),
-          border: Border.all(color: Colors.grey.shade300),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -523,11 +633,22 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: Colors.grey),
-            const SizedBox(width: 12),
-            const Text(
-              'Search destination...',
-              style: TextStyle(color: Colors.grey),
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 6.0),
+                child: Text(
+                  'Search Destination...',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.search, color: Colors.black, size: 20),
             ),
           ],
         ),
@@ -550,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildDestinationsList() {
+  Widget _buildTripsList() {
     return ListView(
       children: [
         _buildStayCard(
@@ -624,7 +745,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             FadeInImage.memoryNetwork(
               placeholder: kTransparentImage,
-              image: stay.imageUrl ?? 'https://picsum.photos/400/600',
+              image: stay.imageUrl ?? 'https://picsum.photos/400/600?grayscale',
               fit: BoxFit.cover,
               imageErrorBuilder: (context, error, stackTrace) {
                 return const Center(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'Trips.dart';
 import 'explore_screen.dart';
+import 'chatbot_screen.dart'; // Import the new chatbot screen
 
 void main() {
   // Ensures that native bindings are initialized before calling SharedPreferences
@@ -113,17 +114,34 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  bool _isChatbotOpen = false;
 
-  // --- UPDATED --- List of screens that will be kept in memory
-  final List<Widget> _widgetOptions = const <Widget>[
-    HomeScreen(),
-    ExploreScreen(),
-    ItineraryScreen(),
-  ];
+  // --- NEW --- Global keys to access child state methods
+  final GlobalKey<ExploreScreenState> _exploreKey = GlobalKey();
+  final GlobalKey<ItineraryScreenState> _tripsKey = GlobalKey();
+
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    // --- UPDATED --- Initialize the list with keys
+    _widgetOptions = <Widget>[
+      const HomeScreen(),
+      ExploreScreen(key: _exploreKey),
+      ItineraryScreen(key: _tripsKey),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  void _toggleChatbot() {
+    setState(() {
+      _isChatbotOpen = !_isChatbotOpen;
     });
   }
 
@@ -132,42 +150,134 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // --- UPDATED --- Using IndexedStack to preserve the state of each tab
           IndexedStack(index: _selectedIndex, children: _widgetOptions),
-          _buildFloatingNavBar(), // Removed the condition, so it always shows
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 0.1),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: _isChatbotOpen
+                ? ChatbotScreen(onClose: _toggleChatbot)
+                : _buildFloatingNavBar(),
+          ),
         ],
       ),
     );
   }
 
+  // --- UPDATED --- This widget now includes the conditional action button
   Widget _buildFloatingNavBar() {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
         margin: const EdgeInsets.only(bottom: 24.0),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(50.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        // Reverted to three navigation items
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildNavItem(Icons.home_outlined, 0),
-            const SizedBox(width: 6),
-            _buildNavItem(Icons.location_on_outlined, 1),
-            const SizedBox(width: 6),
-            _buildNavItem(Icons.card_travel_outlined, 2),
+            // Chatbot Button
+            GestureDetector(
+              onTap: _toggleChatbot,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.flash_on,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Main Navigation Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(50.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildNavItem(Icons.home_outlined, 0),
+                  const SizedBox(width: 6),
+                  _buildNavItem(Icons.location_on_outlined, 1),
+                  const SizedBox(width: 6),
+                  _buildNavItem(Icons.card_travel_outlined, 2),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // --- NEW --- Conditional Action Button
+            _buildConditionalActionButton(),
           ],
         ),
+      ),
+    );
+  }
+
+  // --- NEW --- This widget builds the button based on the selected screen
+  Widget _buildConditionalActionButton() {
+    Widget button;
+    switch (_selectedIndex) {
+      case 1: // Explore Screen
+        button = _buildActionButton(
+          icon: Icons.my_location,
+          onTap: () => _exploreKey.currentState?.goToCurrentUserLocation(),
+        );
+        break;
+      case 2: // Trips Screen
+        button = _buildActionButton(
+          icon: Icons.add,
+          onTap: () => _tripsKey.currentState?.addTrip(),
+        );
+        break;
+      default: // Home Screen or others
+        button = const SizedBox(
+          width: 44,
+        ); // Takes up the same space as the button
+        break;
+    }
+    return AnimatedOpacity(
+      opacity: _selectedIndex == 0 ? 0.0 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: button,
+    );
+  }
+
+  // --- NEW --- Helper to build the action button's UI
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
   }
@@ -185,7 +295,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Icon(
           icon,
           color: isSelected ? Colors.white : Colors.grey.shade400,
-          size: 24,
+          size: 26,
         ),
       ),
     );

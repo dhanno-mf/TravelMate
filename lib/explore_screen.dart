@@ -34,11 +34,11 @@ class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  State<ExploreScreen> createState() => ExploreScreenState();
 }
 
 // --- UPDATED --- Added AutomaticKeepAliveClientMixin to preserve state
-class _ExploreScreenState extends State<ExploreScreen>
+class ExploreScreenState extends State<ExploreScreen>
     with AutomaticKeepAliveClientMixin {
   // Controller for the map
   GoogleMapController? _mapController;
@@ -66,8 +66,10 @@ class _ExploreScreenState extends State<ExploreScreen>
   @override
   void initState() {
     super.initState();
-    // Get the current location when the screen initializes
-    _fetchInitialLocation();
+    // --- UPDATED --- Fetch data after the first frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchInitialLocation();
+    });
   }
 
   // Helper function to create the custom user location marker icon
@@ -91,8 +93,8 @@ class _ExploreScreenState extends State<ExploreScreen>
     return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
   }
 
-  // This function now handles the smart re-centering and refreshing logic
-  Future<void> _goToCurrentUserLocation() async {
+  // --- UPDATED --- This function is now public to be called from the parent
+  Future<void> goToCurrentUserLocation() async {
     // If we have a stored location, check if we should re-center or refresh.
     if (_currentUserLocation != null && _mapController != null) {
       final LatLngBounds visibleRegion = await _mapController!
@@ -137,6 +139,7 @@ class _ExploreScreenState extends State<ExploreScreen>
         locationData.latitude!,
         locationData.longitude!,
       );
+
       final BitmapDescriptor customIcon = await _createCustomMarkerBitmap(
         80,
         Colors.blue.shade600,
@@ -177,7 +180,6 @@ class _ExploreScreenState extends State<ExploreScreen>
     if (_currentUserLocation == null) return;
 
     final String placeType = _getPlaceTypeForCategory(category);
-    debugPrint("Fetching nearby places of type: $placeType");
     final String url =
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_currentUserLocation!.latitude},${_currentUserLocation!.longitude}&radius=5000&type=$placeType&key=$kGoogleApiKey';
 
@@ -443,11 +445,13 @@ class _ExploreScreenState extends State<ExploreScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToCurrentUserLocation,
-        backgroundColor: Colors.black,
-        child: const Icon(Icons.my_location, color: Colors.white),
-      ),
+      // --- UPDATED --- Added a unique heroTag
+      // floatingActionButton: FloatingActionButton(
+      //   heroTag: 'exploreFAB', // Unique tag
+      //   onPressed: goToCurrentUserLocation,
+      //   backgroundColor: Colors.black,
+      //   child: const Icon(Icons.my_location, color: Colors.white),
+      // ),
     );
   }
 
